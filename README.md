@@ -152,7 +152,7 @@ By# My-pharmacy-truck<!DOCTYPE html>
                         </td>https://cotvqodonpvuznpkrgte.supabase.co/rest/v1/
                     </tr>https://const SUPABASE_URL = "YOUR_SUPABASE_URL";
 const SUPABASE_KEY = "YOUR_SUPABASE_ANON_KEY";
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);.supabase.co/rest/v1/
+const Supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_KEY);.supabase.co/rest/v1/
                 `;https://cotvqodonpvuznpkrgte.supabase.co/rest/v1/
             }https://cotvqodonpvuznpkrgte.supabase.co/rest/v1/
         }https://cotvqodonpvuznpkrgte.supabase.co/rest/v1/
