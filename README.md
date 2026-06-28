@@ -1,4 +1,4 @@
-# My-pharmacy-truck<!DOCTYPE html>
+By# My-pharmacy-truck<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -148,12 +148,12 @@
                         <td class="p-2 ${expiryColor}">${inventory[item].expiry || 'N/A'}</td>
                         <td class="p-2 text-right">
                             <button onclick="deleteItem('${item}')" class="text-red-500 text-sm hover:underline">Remove</button>
-                        </td>
-                    </tr>
-                `;
-            }
-        }
-
+                        </td>https://cotvqodonpvuznpkrgte.supabase.co/rest/v1/
+                    </tr>https://cotvqodonpvuznpkrgte.supabase.co/rest/v1/
+                `;https://cotvqodonpvuznpkrgte.supabase.co/rest/v1/
+            }https://cotvqodonpvuznpkrgte.supabase.co/rest/v1/
+        }https://cotvqodonpvuznpkrgte.supabase.co/rest/v1/
+https://cotvqodonpvuznpkrgte.supabase.co/rest/v1/
         // Handle Stock Changes
         document.getElementById('stock-form').addEventListener('submit', (e) => {
             e.preventDefault();
