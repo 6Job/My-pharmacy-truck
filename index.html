@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Truck Pharmacy OS</title>
+    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Truck%20Pharmacy%20OS%22,%22short_name%22:%22RxTruck%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%23ffffff%22,%22theme_color%22:%22%232563eb%22}">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans pb-12">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold">🚛 Pharmacy Truck Manager</h1>
+            <div id="cash-badge" class="bg-blue-800 px-3 py-1 rounded-full text-sm font-semibold">Cash: Ksh 0</div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto p-4 space-y-6">
+
+        <!-- SECTION 1: ADD / UPDATE STOCK -->
+        <section class="bg-white p-6 rounded-xl shadow-sm">
+            <h2 class="text-lg font-bold text-blue-600 mb-4">📦 Manage Stock In / Out</h2>
+            <form id="stock-form" class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <input type="text" id="prod-name" placeholder="Medicine Name" class="p-2 border rounded w-full" required>
+                <input type="number" id="prod-qty" placeholder="Quantity Change (+/-)" class="p-2 border rounded w-full" required>
+                <input type="date" id="prod-expiry" class="p-2 border rounded w-full">
+                <button type="submit" class="bg-blue-600 text-white p-2 rounded hover:bg-blue-700 font-semibold">Update Stock</button>
+            </form>
+        </section>
+
+        <!-- SECTION 2: TRANSACTION LOGGER -->
+        <section class="bg-white p-6 rounded-xl shadow-sm">
+            <h2 class="text-lg font-bold text-green-600 mb-4">💰 Log Sale / Expense</h2>
+            <form id="cash-form" class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <input type="text" id="cash-desc" placeholder="Description (e.g., Sale, Fuel)" class="p-2 border rounded w-full" required>
+                <select id="cash-type" class="p-2 border rounded w-full">
+                    <option value="sale">Sale (Money In)</option>
+                    <option value="expense">Expense (Money Out)</option>
+                </select>
+                <input type="number" id="cash-amount" placeholder="Amount (Ksh)" class="p-2 border rounded w-full" required>
+                <button type="submit" class="bg-green-600 text-white p-2 rounded hover:bg-green-700 font-semibold">Log Cash</button>
+            </form>
+        </section>
+
+        <!-- SECTION 3: CURRENT INVENTORY TABLE -->
+        <section class="bg-white p-6 rounded-xl shadow-sm">
+            <h2 class="text-lg font-bold mb-3">📋 Live Truck Inventory</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b bg-gray-50">
+                            <th class="p-2">Item</th>
+                            <th class="p-2">In-Stock Qty</th>
+                            <th class="p-2">Expiry Date</th>
+                            <th class="p-2 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-table">
+                        <!-- Dynamic content loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Data controllers using device storage
+        let inventory = JSON.parse(localStorage.getItem('truck_inventory')) || {};
+        let cashBalance = Number(localStorage.getItem('truck_cash')) || 0;
+
+        function updateUI() {
+            // Update cash badge
+            document.getElementById('cash-badge').innerText = `Cash: Ksh ${cashBalance.toLocaleString()}`;
+            localStorage.setItem('truck_cash', cashBalance);
+            localStorage.setItem('truck_inventory', JSON.stringify(inventory));
+
+            // Render table
+            const tableBody = document.getElementById('inventory-table');
+            tableBody.innerHTML = '';
+            
+            for (let item in inventory) {
+                if (inventory[item].qty <= 0) continue; // Skip out of stock items
+                
+                // Color alert if close to expiry
+                let expiryColor = "text-gray-600";
+                if(inventory[item].expiry) {
+                    let expDate = new Date(inventory[item].expiry);
+                    let today = new Date();
+                    let diffTime = expDate - today;
+                    let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    if (diffDays < 30) expiryColor = "text-red-600 font-bold animate-pulse";
+                }
+
+                tableBody.innerHTML += `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-2 font-medium">${item}</td>
+                        <td class="p-2">${inventory[item].qty} units</td>
+                        <td class="p-2 ${expiryColor}">${inventory[item].expiry || 'N/A'}</td>
+                        <td class="p-2 text-right">
+                            <button onclick="deleteItem('${item}')" class="text-red-500 text-sm hover:underline">Remove</button>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Handle Stock Changes
+        document.getElementById('stock-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('prod-name').value.trim();
+            const qty = parseInt(document.getElementById('prod-qty').value);
+            const expiry = document.getElementById('prod-expiry').value;
+
+            if (!inventory[name]) {
+                inventory[name] = { qty: 0, expiry: expiry };
+            }
+            inventory[name].qty += qty;
+            if (expiry) inventory[name].expiry = expiry;
+
+            document.getElementById('stock-form').reset();
+            updateUI();
+        });
+
+        // Handle Cash Entry
+        document.getElementById('cash-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const type = document.getElementById('cash-type').value;
+            const amount = parseFloat(document.getElementById('cash-amount').value);
+
+            if (type === 'sale') {
+                cashBalance += amount;
+            } else {
+                cashBalance -= amount;
+            }
+
+            document.getElementById('cash-form').reset();
+            updateUI();
+        });
+
+        function deleteItem(name) {
+            delete inventory[name];
+            updateUI();
+        }
+
+        // Run UI update on startup
+        updateUI();
+    </script>
+</body>
+</html>
