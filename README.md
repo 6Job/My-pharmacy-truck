@@ -1,6 +1,91 @@
 // One-Tap Fast M-Pesa Logger
 async function logMpesaSale(medicationName, unitPrice) {
-    // 1. Instantly prompt for quantity or total amount on screen
+    // 1. Instantly prompt // ==========================================
+// CENTRALIZED PHARMACY TRUCK ENGINE
+// ==========================================
+const SUPABASE_URL = "YOUR_SUPABASE_URL";
+const SUPABASE_KEY = "YOUR_SUPABASE_ANON_KEY";
+const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// 1. FAST M-PESA TRANSACTION PROCESSOR
+async function processMpesaSale(medicationName, unitPrice) {
+    // Prompt for the total cash received via M-Pesa
+    let inputAmount = prompt(`M-PESA SALE: Enter total Ksh received for ${medicationName}:`);
+    
+    // Exit if cancelled or empty
+    if (inputAmount === null || inputAmount.trim() === "") return;
+    
+    let totalPaid = parseFloat(inputAmount);
+    if (isNaN(totalPaid) || totalPaid <= 0) {
+        alert("🚨 Invalid amount entered. Please enter a valid number.");
+        return;
+    }
+
+    // Auto-calculate units sold based on your price
+    let quantitySold = Math.round(totalPaid / unitPrice);
+    if (quantitySold <= 0) {
+        alert("🚨 Amount entered is too low for a single unit sale.");
+        return;
+    }
+
+    // Prepare data payload
+    const payload = {
+        medication: medicationName,
+        quantity: -quantitySold, // Deducts from inventory
+        transaction_type: 'SALE',
+        payment_mode: 'MPESA',
+        amount_paid: totalPaid,
+        created_at: new Date().toISOString()
+    };
+
+    // Push to Cloud (Supabase)
+    try {
+        const { data, error } = await supabase
+            .from('pharmacy_transactions')
+            .insert([payload]);
+
+        if (error) throw error;
+
+        alert(`✅ Success! Deducted ${quantitySold} units of ${medicationName}. (Ksh ${totalPaid} logged via M-Pesa)`);
+        
+        // Update the screen instantly
+        appendLocalLog(medicationName, quantitySold, totalPaid, 'MPESA');
+        updateScreenTotals();
+
+    } catch (err) {
+        console.error("Sync Error:", err.message);
+        alert("⚠️ Cloud Sync Failed: " + err.message + "\nSaving locally for now.");
+        // Fallback local display even if network dips on the road
+        appendLocalLog(medicationName, quantitySold, totalPaid, 'MPESA (Offline)');
+    }
+}
+
+// 2. LIVE INTERFACE LOGGER (Updates the UI dynamically)
+function appendLocalLog(medName, qty, cash, mode) {
+    const logContainer = document.getElementById('transaction-log');
+    if (!logContainer) return;
+
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const logEntry = document.createElement('div');
+    logEntry.style.padding = "8px";
+    logEntry.style.borderBottom = "1px solid #eee";
+    logEntry.style.fontSize = "14px";
+    
+    logEntry.innerHTML = `
+        <strong>[${timestamp}]</strong> ${medName} x${qty} 
+        <span style="color: #2e7d32; font-weight: bold;">- Ksh ${cash}</span> 
+        <canvas style="display:inline-block; width:8px; height:8px; background:#4caf50; border-radius:50%; margin-left:5px;"></canvas> [${mode}]
+    `;
+    
+    // Insert new entries at the top of the list
+    logContainer.insertBefore(logEntry, logContainer.firstChild);
+}
+
+// 3. PLACEHOLDER TO REFRESH RUNNING INVENTORY TOTALS
+function updateScreenTotals() {
+    console.log("Interface updated with latest transactions.");
+    // Add logic here to re-fetch or recalculate current truck stock if needed
+} quantity or total amount on screen
     let inputAmount = prompt(`M-PESA SALE: How much Ksh was paid for ${medicationName}?`);
     
     // If user clicks cancel or leaves it blank, stop immediately
