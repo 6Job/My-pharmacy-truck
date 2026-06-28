@@ -1,4 +1,42 @@
-By# My-pharmacy-truck<!DOCTYPE html>
+// One-Tap Fast M-Pesa Logger
+async function logMpesaSale(medicationName, unitPrice) {
+    // 1. Instantly prompt for quantity or total amount on screen
+    let inputAmount = prompt(`M-PESA SALE: How much Ksh was paid for ${medicationName}?`);
+    
+    // If user clicks cancel or leaves it blank, stop immediately
+    if (inputAmount === null || inputAmount.trim() === "") return;
+    
+    let totalPaid = parseFloat(inputAmount);
+    if (isNaN(totalPaid) || totalPaid <= 0) {
+        alert("Invalid amount entered!");
+        return;
+    }
+
+    // 2. Automatically calculate how many units were bought based on unit price
+    let quantitySold = Math.round(totalPaid / unitPrice);
+    
+    // 3. Instantly push to Supabase Cloud
+    const { data, error } = await supabase
+        .from('pharmacy_transactions')
+        .insert([
+            { 
+                medication: medicationName, 
+                quantity: -quantitySold, // Automatically subtracts from your truck stock
+                transaction_type: 'SALE',
+                payment_mode: 'MPESA',
+                amount_paid: totalPaid,
+                created_at: new Date().toISOString()
+            }
+        ]);
+
+    if (error) {
+        alert("Sync Failed: " + error.message);
+        return;
+    }
+    
+    alert(`Successfully synced! Deducted ${quantitySold} units of ${medicationName} (Ksh ${totalPaid} via M-Pesa).`);
+    updateUserInterface(); // Refresh your tablet dashboard screen
+}By# My-pharmacy-truck<!DOCTYPE html>
 <html lang="en">
 <head>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
